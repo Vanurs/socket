@@ -1,0 +1,23 @@
+{
+    "source": {
+        "include": ["classes", "README-detailed.md"]
+    },
+
+    "opts": {
+        "encoding": "utf8",
+        "destination": "docs/",
+        "recurse": true,
+        "verbose": true,
+        "template": "./node_modules/clean-jsdoc-theme",
+        "theme_opts": {
+            "title": "Docs",
+            "menu": [
+                {
+                  "title": "Code (Github)",
+                  "link": "https://github.com/b-g/p5-matter-examples",
+                  "target": "_blank"
+                }
+            ]
+        }
+    }
+}

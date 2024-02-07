@@ -1,0 +1,12 @@
+{
+  "name": "p5-matter-examples",
+  "scripts": {
+    "docs": "node_modules/.bin/jsdoc --configure jsdoc.json --verbose",
+    "generate-types": "./scripts/generate-types.bash"
+  },
+  "devDependencies": {
+    "@types/p5": "^1.6.0",
+    "clean-jsdoc-theme": "^3.3.4",
+    "jsdoc": "^3.6.10"
+  }
+}
