@@ -144,7 +144,7 @@ function draw() {
   //Debug text
   fill(0);
   textSize(15);
-  
+  //----------------------------------acceleration-------------------------------------
   text("acceleration: ",10,10);
   text(accX.toFixed(2) +", "+accY.toFixed(2)+", "+accZ.toFixed(2),10,40);
 
