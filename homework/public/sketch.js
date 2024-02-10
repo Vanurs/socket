@@ -1,10 +1,10 @@
 // Create connection to Node.JS Server
 const socket = io();
-let rSlider, gSlider, bSlider, colorSwatch, sizeSlider;
-let r = 255;
-let g = 0;
-let b = 100;
-let bSize = 30;
+//let rSlider, gSlider, bSlider, colorSwatch, sizeSlider;
+//let r = 255;
+//let g = 0;
+//let b = 100;
+//let bSize = 30;
 
 let canvas;
 let gui; 
@@ -141,19 +141,20 @@ function draw() {
   }
   pop();
   
+  //-------------------------------------------acceleration-------------------------------------------
   //Debug text
-  fill(0);
-  textSize(15);
-  //----------------------------------acceleration-------------------------------------
-  text("acceleration: ",10,10);
-  text(accX.toFixed(2) +", "+accY.toFixed(2)+", "+accZ.toFixed(2),10,40);
+  // fill(0);
+  // textSize(15);
+  
+  // text("acceleration: ",10,10);
+  // text(accX.toFixed(2) +", "+accY.toFixed(2)+", "+accZ.toFixed(2),10,40);
 
-  text("rotation rate: ",10,80);
-  text(rrateX.toFixed(2) +", "+rrateY.toFixed(2)+", "+rrateZ.toFixed(2),10,110);
+  // text("rotation rate: ",10,80);
+  // text(rrateX.toFixed(2) +", "+rrateY.toFixed(2)+", "+rrateZ.toFixed(2),10,110);
   
   
-  text("device orientation: ",10,150);
-  text(rotateDegrees.toFixed(2) +", "+leftToRight.toFixed(2) +", "+frontToBack.toFixed(2),10,180);  
+  // text("device orientation: ",10,150);
+  // text(rotateDegrees.toFixed(2) +", "+leftToRight.toFixed(2) +", "+frontToBack.toFixed(2),10,180);  
   //---------------------------------------------
   if(drawIsOn){
     fill(r,g,b);
