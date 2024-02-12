@@ -126,7 +126,7 @@ function setup() {
   textSize(fontSize);
   textWrap(WORD);
   textAlign(CENTER);
-  
+
   for (let i = 0; i < lines.length; i++) {
     giveLetters(lines[i]);
     console.log(giveLetters(lines[i])[i]);
@@ -143,7 +143,7 @@ function draw() {
   //    background(255);
   // }
   //----------------------------------------------------markov chain--------------------------
-  
+
 
 
 
@@ -197,6 +197,9 @@ function draw() {
     fill(r, g, b);
     circle(mouseX, mouseY, bSize);
   }
+
+  
+
 
 }
 
@@ -365,7 +368,7 @@ function cleanLine(line) {
   //this one removes \.,?!
   // line = line.replace(/[\.,?!]/g,""); 
 
-  line = line.toLowerCase();// make all lower case
+  line = line.toUpperCase();// make all upper case
   line = line.trim(); // remove white space at front and end of sentence
 
   return line;
@@ -379,10 +382,10 @@ function giveLetters(text) {
   // Now let's go through everything and create the dictionary
   for (let i = 0; i < words.length; i++) {
     words[i] = group[i];
-   
+
     // //check if we aren't yet on the last one before trying to grab the next to store
     // if(i < group.length-1){
-      
+
     //  words.push(word);
     // }
 

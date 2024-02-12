@@ -15,11 +15,16 @@ server.listen(3000, () => {
   console.log("listening on *:3000");
 });
 
-let printEveryMessage = false; 
+let printEveryMessage = false;
 
 // Callback function for what to do when our P5.JS sketch connects and sends us messages
 io.on("connection", (socket) => {
   console.log("a user connected");
+  const count = io.engine.clientsCount;
+  // may or may not be similar to the count of Socket instances in the main namespace, depending on your usage
+  const count2 = io.of("/").sockets.size;
+  console.log(count);
+  console.log(count2);
   // Code to run every time we get a message from P5.JS
   socket.on("drawing", (data) => {
 
