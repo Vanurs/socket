@@ -5,9 +5,17 @@ let generateLetter = false;
 //data structure
 let lines = []; // for cut up generator
 let words = [];
+let wordToPlay;
+let dWords = [];
+let uLetter;
+let fontSize;
+
+let uID;
+
 
 // Create connection to Node.JS Server
 const socket = io();
+let clientCount = 0;
 
 let rSlider, gSlider, bSlider, colorSwatch, sizeSlider;
 let r = 255;
@@ -41,12 +49,22 @@ let rotateDegrees = 0;
 let frontToBack = 0;
 let leftToRight = 0;
 
+//----------------------------------------------------------
+const { Engine, World, Bodies, Composite } = Matter;
+
+let engine;
+let world;
+let boxes = [];
+let ground;
+//----------------------------------------------------------
+
 function preload() {
   //loadStrings() breaks your text on new line character
   lines = loadStrings("words.txt");
 }
 
 function setup() {
+  //background(255);
   //Currently we make other people's drawing fit into our canvas, so when on portrait resolutions vs landscape things will look a little different/distorted
   //ratio fix... but then need to make a bunch of other UX decisions like whether you zoom into the canvas or center it somehow
   // if(windowWidth > windowHeight){
@@ -55,9 +73,13 @@ function setup() {
   //   canvas = createCanvas(windowHeight, windowHeight);
   // }
 
-  //------------------------------markov chain--------------------
-  console.log(lines);
-
+  //------------------------------engine--------------------
+  // create an engine
+  engine = Engine.create();
+  world = engine.world;
+  // Engine.run is deprecated
+  ground = new Boundary(200, height, width, 100);
+  Composite.add(world, ground);
 
   //--------------------------------------------------------------
 
@@ -119,22 +141,24 @@ function setup() {
   }
 
   //----------
-  background(255);
+  //background(255);
   noStroke();
 
-  let fontSize = map(displayText.length, 0, 200, 30, 20, true);
+  fontSize = map(displayText.length, 0, 200, 30, 20, true);
   textSize(fontSize);
   textWrap(WORD);
   textAlign(CENTER);
 
   for (let i = 0; i < lines.length; i++) {
-    giveLetters(lines[i]);
-    console.log(giveLetters(lines[i])[i]);
-    text(giveLetters(lines[i])[i], width / 2, height / 2, 400);
+    wordToPlay = giveLetters(lines[0]);
+    console.log(wordToPlay[i]);
   }
+  uletter = wordToPlay[int(random(0, 4))];
+
 }
 
 function draw() {
+  background(255, 60);
   // let totalMovement = Math.abs(accX)+Math.abs(accY)+Math.abs(accZ);//movement in any direction
   // //set your own threshold for how sensitive you want this to be
   // if(totalMovement > 2){
@@ -142,8 +166,12 @@ function draw() {
   // }else{
   //    background(255);
   // }
-  //----------------------------------------------------markov chain--------------------------
-
+  //----------------------------------------------------engine--------------------------
+  Engine.update(engine);
+    for (let i = 0; i < boxes.length; i++) {
+        boxes[i].show();
+    }
+    ground.show();
 
 
 
@@ -195,17 +223,17 @@ function draw() {
   //---------------------------------------------
   if (drawIsOn) {
     fill(r, g, b);
-    circle(mouseX, mouseY, bSize);
+    text(uletter, mouseX, mouseY, 400);
+    //circle(mouseX, mouseY, bSize);
+
   }
-
-  
-
 
 }
 
 //we only want to draw if the click is on the canvas not on our GUI
 function canvasMousePressed() {
   drawIsOn = true;
+  boxes.push(new Box(mouseX, mouseY, random(10, 40), random(10,40)));
 }
 
 function mouseReleased() {
@@ -225,8 +253,10 @@ function mouseDragged() {
     userR: r,
     userG: g,
     userB: b,
+    letter: uletter,
     // userS: bSize / width //scaling brush size to user window
-    userS: bSize
+    userS: bSize,
+
   });
 
 }
@@ -245,12 +275,15 @@ function touchMoved() {
     return;
   }
 
+  //user data
+
   socket.emit("drawing", {
     xpos: mouseX / width,
     ypos: mouseY / height,
     userR: r,
     userG: g,
     userB: b,
+    letter: uletter,
     // userS: bSize / width //scaling brush size to user window
     userS: bSize
   });
@@ -261,7 +294,17 @@ function touchMoved() {
 function onDrawingEvent(data) {
   fill(data.userR, data.userG, data.userB);
   //circle(data.xpos * width,data.ypos * height,data.userS * width);//scaling brush size to user window
-  circle(data.xpos * width, data.ypos * height, data.userS);//slightly nicer on mobile
+  //circle(data.xpos * width, data.ypos * height, data.userS);//slightly nicer on mobile
+  text(data.letter, data.xpos * width, data.ypos * height, 400);
+}
+
+function letterMoveEvent(data) {
+  fill(data.userR, data.userG, data.userB);
+  fontSize = map(displayText.length, 0, 200, 30, 20, true);
+  textSize(fontSize);
+
+  text(data.letter, data.xpos * width, data.ypos * height, 400);
+
 }
 
 function handleButtonPress() {
@@ -336,19 +379,23 @@ function windowResized() {
 
 // Connect to Node.JS Server
 socket.on("connect", () => {
+  clientCount += 1;
+  console.log(clientCount);
   console.log(socket.id);
-  generateLetter = true;
+
 });
 
 // Callback function on the event we disconnect
 socket.on("disconnect", () => {
+  clientCount -= 1;
+  console.log(clientCount);
   console.log(socket.id);
 });
 
 // Callback function to recieve message from Node.JS
 socket.on("drawing", (data) => {
   console.log(data);
-
+  //letterMoveEvent(data)
   onDrawingEvent(data);
 
 });
@@ -383,13 +430,29 @@ function giveLetters(text) {
   for (let i = 0; i < words.length; i++) {
     words[i] = group[i];
 
-    // //check if we aren't yet on the last one before trying to grab the next to store
-    // if(i < group.length-1){
-
-    //  words.push(word);
-    // }
-
   }
   return group;
 
+}
+
+function formAWord(data) {
+  let posX1, posX2, posX3, posX4;
+  if (data.letter == "L") {
+    posX1 = data.xpos;
+  }
+  if (data.letter == "O") {
+    posX2 = data.xpos;
+  }
+  if (data.letter == "V") {
+    posX3 = data.xpos;
+  }
+  if (data.letter == "E") {
+    posX4 = data.xpos;
+  }
+  if (posX1 < posX2) {
+    console.log("you formed a letter!");
+  }
+  if (posX1 < posX2) {
+    console.log("you formed a letter!");
+  }
 }
