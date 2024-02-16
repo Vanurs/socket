@@ -1,5 +1,5 @@
 class Boundary {
-    constructor(x, y, w, h) {
+    constructor( x, y, w, h) {
         this.x = x;
         this.y = y;
         this.w = w;
@@ -10,6 +10,7 @@ class Boundary {
             isStatic: true
         }
         this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
+       
         Composite.add(world, this.body);
     }
 

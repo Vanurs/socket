@@ -6,6 +6,11 @@ const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
+const count = io.engine.clientsCount;
+// may or may not be similar to the count of Socket instances in the main namespace, depending on your usage
+const count2 = io.of("/").sockets.size;
+console.log(count);
+
 
 // Tell our Node.js Server to host our P5.JS sketch from the public folder.
 app.use(express.static("public"));
@@ -20,11 +25,7 @@ let printEveryMessage = false;
 // Callback function for what to do when our P5.JS sketch connects and sends us messages
 io.on("connection", (socket) => {
   console.log("a user connected");
-  const count = io.engine.clientsCount;
-  // may or may not be similar to the count of Socket instances in the main namespace, depending on your usage
-  const count2 = io.of("/").sockets.size;
-  console.log(count);
-  console.log(count2);
+ 
   // Code to run every time we get a message from P5.JS
   socket.on("drawing", (data) => {
 
@@ -34,6 +35,17 @@ io.on("connection", (socket) => {
     // Print it to the Console
     if (printEveryMessage) {
       console.log(data);
+    }
+  });
+
+  socket.on("form", (data) => {
+
+    //do something
+    socket.broadcast.emit('form', data);//broadcast.emit means send to everyone but the sender
+
+    // Print it to the Console
+    if (printEveryMessage) {
+      console.log("yaay");
     }
   });
 });

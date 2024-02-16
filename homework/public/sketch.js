@@ -21,7 +21,7 @@ let rSlider, gSlider, bSlider, colorSwatch, sizeSlider;
 let r = 255;
 let g = 0;
 let b = 100;
-let bSize = 30;
+let bSize = 1;
 
 let canvas;
 let gui;
@@ -50,17 +50,24 @@ let frontToBack = 0;
 let leftToRight = 0;
 
 //----------------------------------------------------------
-const { Engine, World, Bodies, Composite } = Matter;
+const { Engine, World, Bodies, Composite, Svg } = Matter;
 
 let engine;
 let world;
 let boxes = [];
 let ground;
 //----------------------------------------------------------
+//emoji data
+let data;
+let emojis = [];
+let peopleEmoji = [];
 
 function preload() {
   //loadStrings() breaks your text on new line character
   lines = loadStrings("words.txt");
+  //load JSON
+  data = loadJSON("emojis.json");
+  console.log("preload");
 }
 
 function setup() {
@@ -73,20 +80,14 @@ function setup() {
   //   canvas = createCanvas(windowHeight, windowHeight);
   // }
 
-  //------------------------------engine--------------------
-  // create an engine
-  engine = Engine.create();
-  world = engine.world;
-  // Engine.run is deprecated
-  ground = new Boundary(200, height, width, 100);
-  Composite.add(world, ground);
 
-  //--------------------------------------------------------------
 
   canvas = createCanvas(windowWidth, windowHeight);
   canvas.parent("sketch-container");
   canvas.mousePressed(canvasMousePressed);
   canvas.touchStarted(canvasTouchStarted);
+
+
 
   gui = select("#gui-container");
   gui.addClass("open");//forcing it open at the start, remove if you want it closed
@@ -104,7 +105,7 @@ function setup() {
   bSlider = createSlider(0, 255, b);
   bSlider.parent(gui);
   bSlider.addClass("slider");
-  sizeSlider = createSlider(1, 100, bSize);
+  sizeSlider = createSlider(0.3, 5, bSize);
   sizeSlider.parent(gui);
   sizeSlider.addClass("slider");
 
@@ -139,9 +140,21 @@ function setup() {
     window.addEventListener('devicemotion', deviceMotionHandler, true);
     window.addEventListener('deviceorientation', deviceTurnedHandler, true)
   }
+  //------------------------------engine--------------------
+  // create an engine
+  engine = Engine.create();
+  world = engine.world;
+  // Engine.run is deprecated
+  ground = new Boundary(0, windowHeight, windowWidth, 50);
+  wallA = new Boundary(0, 0, 50, windowHeight);
+  wallB = new Boundary(windowWidth, windowHeight, 50, windowHeight);
+  Composite.add(world, ground, wallA, wallB);
 
-  //----------
-  //background(255);
+  //--------------------------------------------------------------
+  console.log("setup", data);
+  emojis = data.emojis;
+  //--------------------------------------------------------------
+  
   noStroke();
 
   fontSize = map(displayText.length, 0, 200, 30, 20, true);
@@ -149,30 +162,29 @@ function setup() {
   textWrap(WORD);
   textAlign(CENTER);
 
-  for (let i = 0; i < lines.length; i++) {
-    wordToPlay = giveLetters(lines[0]);
-    console.log(wordToPlay[i]);
-  }
-  uletter = wordToPlay[int(random(0, 4))];
+  pushPEmoji("People-Body");
+  uletter = peopleEmoji[int(random(peopleEmoji.length))].Representation;
 
 }
 
 function draw() {
   background(255, 60);
-  // let totalMovement = Math.abs(accX)+Math.abs(accY)+Math.abs(accZ);//movement in any direction
-  // //set your own threshold for how sensitive you want this to be
-  // if(totalMovement > 2){
-  //    background(255,0,0);
-  // }else{
-  //    background(255);
-  // }
+  let totalMovement = Math.abs(accX)+Math.abs(accY)+Math.abs(accZ);//movement in any direction
+  //set your own threshold for how sensitive you want this to be
+  if(totalMovement > 2){
+     background(255,0,0);
+  }else{
+     background(255);
+  }
   //----------------------------------------------------engine--------------------------
   Engine.update(engine);
-    for (let i = 0; i < boxes.length; i++) {
-        boxes[i].show();
-    }
-    ground.show();
-
+  for (let i = 0; i < boxes.length; i++) {
+    boxes[i].show();
+  }
+  ground.show();
+  wallA.show();
+  wallB.show();
+ // Box.applyForce(boxes, {x:boxes.x, y:boxes.y}, {x:accX, y:accY});
 
 
   //-------------------------------------------------------
@@ -220,20 +232,41 @@ function draw() {
 
   // text("device orientation: ",10,150);
   // text(rotateDegrees.toFixed(2) +", "+leftToRight.toFixed(2) +", "+frontToBack.toFixed(2),10,180);  
+
+  engine.world.gravity.y += frontToBack;
   //---------------------------------------------
   if (drawIsOn) {
     fill(r, g, b);
+
     text(uletter, mouseX, mouseY, 400);
-    //circle(mouseX, mouseY, bSize);
 
   }
+  
+  console.log(boxes.length);
 
 }
 
 //we only want to draw if the click is on the canvas not on our GUI
 function canvasMousePressed() {
   drawIsOn = true;
-  boxes.push(new Box(mouseX, mouseY, random(10, 40), random(10,40)));
+  
+  //don't emit if we aren't drawing on the canvas
+  if (!drawIsOn) {
+    return;
+  }
+
+  socket.emit("drawing", {
+    xpos: mouseX / width,
+    ypos: mouseY / height,
+    userR: r,
+    userG: g,
+    userB: b,
+    letter: uletter,
+    // userS: bSize / width //scaling brush size to user window
+    userS: bSize,
+
+  });
+
 }
 
 function mouseReleased() {
@@ -292,20 +325,11 @@ function touchMoved() {
 
 
 function onDrawingEvent(data) {
-  fill(data.userR, data.userG, data.userB);
-  //circle(data.xpos * width,data.ypos * height,data.userS * width);//scaling brush size to user window
-  //circle(data.xpos * width, data.ypos * height, data.userS);//slightly nicer on mobile
-  text(data.letter, data.xpos * width, data.ypos * height, 400);
+  let c = color(data.userR, data.userG, data.userB);
+  boxes.push(new Box(mouseX, mouseY, random(50, 200), random(50, 200), data.letter, c, data.userS, accX, accY));
+ 
 }
 
-function letterMoveEvent(data) {
-  fill(data.userR, data.userG, data.userB);
-  fontSize = map(displayText.length, 0, 200, 30, 20, true);
-  textSize(fontSize);
-
-  text(data.letter, data.xpos * width, data.ypos * height, 400);
-
-}
 
 function handleButtonPress() {
   gui.toggleClass("open");
@@ -367,14 +391,14 @@ function windowResized() {
 
   //wipes out the history of drawing if resized, potential fix, draw to offscreen buffer
   //https://p5js.org/reference/#/p5/createGraphics
-  // resizeCanvas(windowWidth, windowHeight);
+  resizeCanvas(windowWidth, windowHeight);
 
   //ratio fix... but then need to make a bunch of other UX decisions like whether you zoom into the canvas or center it somehow
-  // if(windowWidth > windowHeight){
-  //   resizeCanvas(windowWidth, windowWidth);
-  // }else{
-  //   resizeCanvas(windowHeight, windowHeight);
-  // }
+  if (windowWidth > windowHeight) {
+    resizeCanvas(windowWidth, windowWidth);
+  } else {
+    resizeCanvas(windowHeight, windowHeight);
+  }
 }
 
 // Connect to Node.JS Server
@@ -395,64 +419,71 @@ socket.on("disconnect", () => {
 // Callback function to recieve message from Node.JS
 socket.on("drawing", (data) => {
   console.log(data);
-  //letterMoveEvent(data)
   onDrawingEvent(data);
 
 });
 
-// function to split text 
-function tokenise(text, seperator) {
-  let tokens = text.split(seperator);
-  return tokens;
+
+function dataLoaded(data) {
+  emoji = data;
+  //emoji = JSON.stringify(data);
+  loading = false;
 }
 
-function cleanLine(line) {
-  // console.log("With punctuation: " + line);
+function displayEmojiCategory(emojiCategory) {
 
-  //regex to replace everything except letters, whitespace & '
-  line = line.replace(/[^a-zA-Z ']/g, "");
-  //or a regex to replace only certain punctuation characters added between []
-  //this one removes \.,?!
-  // line = line.replace(/[\.,?!]/g,""); 
+  let emojiString = "";
 
-  line = line.toUpperCase();// make all upper case
-  line = line.trim(); // remove white space at front and end of sentence
+  for (let i = 0; i < emojis.length; i++) {
+    if (emojis[i].Group == emojiCategory) {
+      emojiString += emojis[i].Representation + " ";
+    }
+  }
 
-  return line;
-
+  return emojiString;
 }
 
-function giveLetters(text) {
-  text = cleanLine(text);
-  let group = tokenise(text, " ");
-  console.log(group);
-  // Now let's go through everything and create the dictionary
-  for (let i = 0; i < words.length; i++) {
-    words[i] = group[i];
+function pushPEmoji(emojiCategory) {
 
+  for (let i = 0; i < emojis.length; i++) {
+    if (emojis[i].Group == emojiCategory) {
+      peopleEmoji.push(emojis[i]);
+    }
   }
-  return group;
-
 }
 
-function formAWord(data) {
-  let posX1, posX2, posX3, posX4;
-  if (data.letter == "L") {
-    posX1 = data.xpos;
+
+//create string from array of emoji objects
+function createEmojiString(emojiArray) {
+
+  let emojiString = "";
+
+  //using an array to loop and add to string (you could also use the p5 join() functionality instead)
+  for (let i = 0; i < emojiArray.length; i++) {
+    emojiString += emojiArray[i].Representation + " ";//add white space between each emoji
   }
-  if (data.letter == "O") {
-    posX2 = data.xpos;
-  }
-  if (data.letter == "V") {
-    posX3 = data.xpos;
-  }
-  if (data.letter == "E") {
-    posX4 = data.xpos;
-  }
-  if (posX1 < posX2) {
-    console.log("you formed a letter!");
-  }
-  if (posX1 < posX2) {
-    console.log("you formed a letter!");
-  }
+
+  return emojiString;
+}
+
+//example of array filtering with an array of objects
+//check in all emojis for a key value pair
+function filterEmojis(key, value) {
+
+  let array = emojis.filter(function (item) {
+    return item[key].includes(value);
+  });
+
+  return array;
+}
+
+//example of array filtering with an array of objects
+//check in Group of emojis for a key value pair
+function filterEmojisInCategory(category, key, value) {
+
+  let array = emojis.filter(function (item) {
+    return item.Group === category && item[key].includes(value);
+  });
+
+  return array;
 }
