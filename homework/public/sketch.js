@@ -1,3 +1,21 @@
+/*
+modified from the original web socket remote painter code
+modified from the Daniel Shiffman's matter.js tutorial
+edited by Xintong Li
+*/
+
+/*remote 2D physical dropper with customized emoji specific to each user
+support customizable color and size of the 2D physical shapes
+Gyro supported when open website on iPhone
+*/
+//only show other people's drawing
+//*** https://carpal-deluxe-attraction.glitch.me*/
+
+
+
+
+
+
 //create markov
 let displayText = "Don't show this boring sentence, click to generate some text instead!";
 let generateLetter = false;
@@ -70,17 +88,7 @@ function preload() {
   console.log("preload");
 }
 
-function setup() {
-  //background(255);
-  //Currently we make other people's drawing fit into our canvas, so when on portrait resolutions vs landscape things will look a little different/distorted
-  //ratio fix... but then need to make a bunch of other UX decisions like whether you zoom into the canvas or center it somehow
-  // if(windowWidth > windowHeight){
-  //   canvas = createCanvas(windowWidth, windowWidth);
-  // }else{
-  //   canvas = createCanvas(windowHeight, windowHeight);
-  // }
-
-
+function setup() {}
 
   canvas = createCanvas(windowWidth, windowHeight);
   canvas.parent("sketch-container");
@@ -219,19 +227,6 @@ function draw() {
   pop();
 
   //-------------------------------------------acceleration-------------------------------------------
-  //Debug text
-  // fill(0);
-  // textSize(15);
-
-  // text("acceleration: ",10,10);
-  // text(accX.toFixed(2) +", "+accY.toFixed(2)+", "+accZ.toFixed(2),10,40);
-
-  // text("rotation rate: ",10,80);
-  // text(rrateX.toFixed(2) +", "+rrateY.toFixed(2)+", "+rrateZ.toFixed(2),10,110);
-
-
-  // text("device orientation: ",10,150);
-  // text(rotateDegrees.toFixed(2) +", "+leftToRight.toFixed(2) +", "+frontToBack.toFixed(2),10,180);  
 
   engine.world.gravity.y += frontToBack;
   //---------------------------------------------
@@ -287,7 +282,6 @@ function mouseDragged() {
     userG: g,
     userB: b,
     letter: uletter,
-    // userS: bSize / width //scaling brush size to user window
     userS: bSize,
 
   });
@@ -317,7 +311,6 @@ function touchMoved() {
     userG: g,
     userB: b,
     letter: uletter,
-    // userS: bSize / width //scaling brush size to user window
     userS: bSize
   });
 
